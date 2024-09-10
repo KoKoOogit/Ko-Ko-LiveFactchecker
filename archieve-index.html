@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documents</title>
+</head>
+<body>
+    <h1>Starting</h1>
+
+    <script>
+        // JavaScript code to capture audio and send to Python server using WebSockets
+            async function startAudioStreaming() {
+                // Check if the browser supports the required APIs
+                if (!navigator.mediaDevices || !window.WebSocket) {
+                    console.error("Your browser does not support necessary APIs for this demo.");
+                    return;
+                }
+
+                try {
+                    // Get audio stream from the user's microphone
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    const audioContext = new AudioContext();
+                    const source = audioContext.createMediaStreamSource(stream);
+                    const processor = audioContext.createScriptProcessor(1024, 1, 1);
+
+                    // Create a WebSocket connection to the Python server
+                    const socket = new WebSocket('ws://localhost:6789');
+
+                    socket.onopen = () => {
+                        console.log("WebSocket connection established");
+
+                        // Process audio data and send it through WebSocket
+                        processor.onaudioprocess = (event) => {
+                            const audioData = event.inputBuffer.getChannelData(0);  // Get audio data from the buffer
+
+                            // Convert Float32Array to a simpler format (e.g., Int16) for transmission
+                            const audioInt16 = new Int16Array(audioData.length);
+                            for (let i = 0; i < audioData.length; i++) {
+                                audioInt16[i] = audioData[i] * 32767;  // Convert float (-1.0 to 1.0) to int (-32767 to 32767)
+                            }
+
+                            // Send the data to the WebSocket server
+                            socket.send(audioInt16.buffer);
+                        };
+
+                        // Connect audio nodes to start processing
+                        source.connect(processor);
+                        processor.connect(audioContext.destination);
+                    };
+
+                    socket.onerror = (error) => {
+                        console.error("WebSocket error:", error);
+                    };
+
+                    socket.onclose = () => {
+                        console.log("WebSocket connection closed");
+                    };
+
+                } catch (error) {
+                    console.error("Error accessing audio stream:", error);
+                }
+            }
+
+            // Start the audio streaming when the page is loaded
+            startAudioStreaming();
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debunkr: AI Fact Checker</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,184;1,184&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <header>
+        <h1>Debunkr: AI Fact Checker</h1>
+        <p>Upload or record audio to check facts in real-time.</p>
+    </header>
+
+    <main class="container">
+        <section class="video-input">
+           
+
+            <div class="record-section">
+                <h3>Record Audio</h3>
+                <div class="record-buttons">
+                    <button class="primary-btn" id="startRecording">Start Recording</button>
+                    <button class="secondary-btn" id="stopRecording" disabled>Stop Recording</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="transcript-section">
+            <h2>Transcript</h2>
+            <div id="transcriptOutput" class="output-box"></div>
+        </section>
+
+        <section class="results-section">
+            <h2>Fact Check Results</h2>
+            <div id="factCheckResults" class="output-box"></div>
+        </section>
+    </main>
+
+   <script>
+
+    const recordingBTN = document.getElementById("startRecording")
+    const resultsElem = document.getElementById("factCheckResults")
+    const sessionID = this.crypto.randomUUID()
+    const sessionIDBytes = new TextEncoder().encode(sessionID)
+    const sessionIDInt16 = new Int16Array(sessionIDBytes.buffer);
+    console.log(sessionIDInt16.length)
+
+     // JavaScript code to capture audio and send to Python server using WebSockets
+    async function startAudioStreaming() {
+            // Check if the browser supports the required APIs
+            if (!navigator.mediaDevices || !window.WebSocket) {
+                console.error("Your browser does not support necessary APIs for this demo.");
+                return;
+            }
+
+            try {
+                // Get audio stream from the user's microphone
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const audioContext = new AudioContext();
+                const source = audioContext.createMediaStreamSource(stream);
+                const processor = audioContext.createScriptProcessor(1024, 1, 1);
+
+                // Create a WebSocket connection to the Python server
+                const socket = new WebSocket('ws://localhost:6789');
+
+                socket.onopen = () => {
+                    console.log("WebSocket connection established");
+                    socket.send(sessionID)
+                
+                    // Process audio data and send it through WebSocket
+                    processor.onaudioprocess = (event) => {
+                        const audioData = event.inputBuffer.getChannelData(0);  // Get audio data from the buffer
+
+                        // Convert Float32Array to a simpler format (e.g., Int16) for transmission
+                        const audioInt16 = new Int16Array(audioData.length);
+                        for (let i = 0; i < audioData.length; i++) {
+                            audioInt16[i] = audioData[i] * 32767;  // Convert float (-1.0 to 1.0) to int (-32767 to 32767)
+                        }
+
+                        const combinedBuffer = new Int16Array(sessionIDInt16.length + audioInt16.length);
+                        combinedBuffer.set(sessionIDBytes,0)
+                        combinedBuffer.set(audioInt16,sessionIDInt16.length)
+                        // Send the data to the WebSocket server
+                        socket.send(combinedBuffer.buffer);
+                    };
+
+                    // Connect audio nodes to start processing
+                    source.connect(processor);
+                    processor.connect(audioContext.destination);
+                };
+
+                socket.onmessage = (message) => {
+                    resultsElem.innerHTML += message.data
+                }
+                socket.onerror = (error) => {
+                    console.error("WebSocket error:", error);
+                };
+
+                socket.onclose = () => {
+                    console.log("WebSocket connection closed");
+                };
+
+            } catch (error) {
+                console.error("Error accessing audio stream:", error);
+            }
+        }
+
+    recordingBTN.addEventListener("click",(e) => {
+        recordingBTN.textContent  = "Recording..."
+        startAudioStreaming()
+    })
+    
+
+   </script>
+</body>
+
+</html>

@@ -1,0 +1,56 @@
+Here's a prompt that you can use as a starting point for the live fact-checking application:
+
+```markdown
+**Fact Extraction and Verification Prompt**
+
+**Input:**
+
+* A set of statements from multiple speakers
+* Each speaker's name to replace pronouns
+* The goal is to verify the facts mentioned in the statements
+* A tool `fact_check` that takes a string of search queries (operated by commas) as a parameter and returns internet information
+
+**Output:**
+
+* A JSON object containing:
+	+ "fact": the extracted fact
+	+ "reason": the reason why the fact is true or false
+	+ "speaker": the speaker who made the claim
+	+ "sources": web sources that support or contradict the fact
+
+**Step 1: Extract Facts and Generate Search Queries**
+
+Replace pronouns in each statement with the corresponding speaker's name. Then, extract facts from each statement. Generate a search query for each fact.
+
+Example:
+Statement: "I am running for the 2024 president election."
+Search Query: "Kamala Harris running for 2024 president election" ( speaker 1's name)
+
+**Step 2: Use  fact_check  Tool to Get Internet Information**
+
+Use the `fact_check` tool to search for each search query. Pass the search queries as a comma-separated string.
+
+Example:
+Search Queries: "Kamala Harris running for 2024 president election, Donald Trump running for 2024 president election"
+Internet Information: Results from Google search
+
+**Step 3: Determine Fact Accuracy and Generate Output**
+
+For each fact, check if the search query results indicate that the fact is true or false. If the fact is false, provide a reason why it is not true. Gather supporting web sources for the fact, if possible.
+
+Example Output JSON Format:
+```
+
+{
+  "fact": "Donald Trump is the president of the United States in 2024",
+  "reason": "False",
+  "speaker": "Speaker 2",
+  "sources": ["Article from news source indicating Joe Biden is the current president and has not announced his retirement"]
+}
+```
+
+**Expected Format of Input and Output:**
+
+* Input: List of statements from multiple speakers, with each speaker's name. (e.g. `["I am running for 2024 president election", "I am the president of the United States in 2024", "Speaker 1: Kamala Harris", "Speaker 2: Donald Trump"]`)
+* Output: A list of JSON objects, one for each fact. (e.g. `[{ "fact": "...", "reason": "...", "speaker": "...", "sources": [...]}]`)
+

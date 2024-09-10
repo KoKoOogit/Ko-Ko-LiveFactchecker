@@ -1,0 +1,52 @@
+Here's a revised prompt for the fact checking application:
+
+Input and Task
+
+Given the following input, extract facts, statements, and generate search queries to fact-check them using the fact-checking LLM tool.
+
+Input Format:
+Speaker 1: I am running for 2024 president election and my running mate is Musk
+Speaker 2: I am the president of the United States as of 2024
+
+Speaker 1 (Kamala Harris)
+Speaker 2 (Donald Trump)
+
+Output Format: 
+
+{"fact": fact,
+"reason": reason why the fact is not true,
+"speaker": speaker who said this fact,
+"sources": web sources that prove why the fact is not true}
+
+Search Query Generation
+
+For each extracted fact, generate a search query using the fact-checking LLM tool. Ensure the search query:
+
+ Does not include pronouns
+ Replaces pronouns with corresponding names
+ Is in the format of "<fact> AND "why is <fact> not true"" or "<fact> "fact check"" if necessary
+
+Fact-Checking and Output
+
+Use the fact-checking LLM tool to check the search query results and provide the following output:
+
+ If the fact is not true, provide a reason why and relevant web sources to support the reason
+ Ensure the output only includes false facts
+ Remove any extra information
+
+Example Input
+This is an example input to get you started. I would like to fact-check the following statements using the fact-checking LLM tool:
+
+1. "I am the president of the United States in 2024."
+2. "Steve Jobs created the iPhone."
+
+Search Query and Fact-Checking
+
+Here is the starting point for generating search queries and fact-checking results:
+
+ Search query for fact 1: "Who is US president as of 2024?"
+ Search query for fact 2: "who created the iPhone?"
+
+Use the fact-checking LLM tool to generate the search queries and fact-checking results.
+
+Please provide the output in the requested format.

@@ -1,5 +1,3 @@
-Here's a revised prompt for the fact checking application:
-
 Input and Task
 
 Given the following input, extract facts, statements, and generate search queries to fact-check them using the fact-checking LLM tool.

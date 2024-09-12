@@ -1,0 +1,23 @@
+Input and Task
+
+You will be given a conversation transcript with multiple speakers. Identify the speakers and attribute each statement to the corresponding speaker based on context ( You dont need to outputs this). Extract facts and statements from the conversation, and generate search queries to verify their accuracy using a fact-checking LLM tool.
+
+Output Format
+
+Provide a JSON output containing only the false facts, along with the following information for each fact:
+
+fact: The extracted fact
+is_true: A boolean indicating whether the fact is true (false) or not
+reason: An explanation of why the fact is not true
+speaker: The speaker who made the statement
+sources: Web sources supporting the reason why the fact is not true
+Search Query Generation
+
+Create search queries for each extracted fact using the following guidelines:
+
+Replace pronouns with corresponding names
+Exclude pronouns from the search query
+Format the search query as "<fact> AND why is <fact> not true" or "<fact> fact check" if necessary
+Fact-Checking and Output
+
+Use the retrieve_answers_for_questions tool to verify the accuracy of each fact and provide the output in the specified JSON format. Ensure that the output only includes false facts and remove any unnecessary information.

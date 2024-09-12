@@ -11,6 +11,7 @@ import uuid
 from io import BytesIO
 from sklearn.cluster import AgglomerativeClustering
 from scipy.spatial.distance import cdist
+import json 
 
 class AudioProcessor:
     def __init__(self):
@@ -19,7 +20,7 @@ class AudioProcessor:
             self.diarizationModel,
             use_auth_token=os.environ['HF_TOKEN'])
 
-        self.whisperModelSize = "tiny.en"
+        self.whisperModelSize = "base"
         self.whisperModel = WhisperModel(
             self.whisperModelSize, device="cpu", compute_type="int8")
 
@@ -37,7 +38,7 @@ class AudioProcessor:
         self.embeddings = []
         self.superEmbeddings = {}
         self.active_speaker  = -1
-        self.threshold = 0.9
+        self.threshold = 0.35
         self.counter = 0
   
     def groqTranscribe(self, wav_file):
@@ -45,7 +46,7 @@ class AudioProcessor:
             transcription = self.groqClient.audio.transcriptions.create(
                 file=(wav_file, f.read()),  # Required audio file
                 model="distil-whisper-large-v3-en",  # Required model to use for transcription
-                prompt="Specify context or spelling",  # Optional
+                prompt="This contexts is a debate",  # Optional
                 response_format="json",  # Optional
                 language="en",  # Optional
             )
@@ -172,6 +173,13 @@ class AudioProcessor:
         visited_speakers = set()
         
         for segment in segments:
+            transcript_obj = {
+                "mode":"transcript",
+                "data":segment.text
+            }
+            await websocket.send(json.dumps(transcript_obj))
+           
+
             if segment.id not in visited_speakers:
                 uid = uuid.uuid4()
                 excerpt = active_file[segment.start * 1000: segment.end * 1000]
@@ -183,8 +191,8 @@ class AudioProcessor:
                     if self.active_speaker != -1 and predictedSpeaker != self.active_speaker:
                         llm_response = tp.process()
                         self.active_speaker = predictedSpeaker
-                        # print(llm_response)
-                        await websocket.send(llm_response)
+                        obj = {"type":"llm_response", "data":llm_response}
+                        await websocket.send(json.dumps(obj))
                        
                     
                     if self.active_speaker == -1:
@@ -197,35 +205,35 @@ class AudioProcessor:
 
         return self.embeddings
 
-    def start_processing(self, wav_file):
-        local_embedding = {}
-        local_transcription = {}
-        local_timestamp = []
-        n_spakers = 3
+    async def get_llm_output(self, nparr, tp, websocket):
         
-        clustering = AgglomerativeClustering(n_clusters=n_spakers,linkage="average")
         os.makedirs("temp", exist_ok=True)
-
-        segments, info = self.whisperModel.transcribe(wav_file, beam_size=5)
-        visited_speakers = set()
-        active_file = AudioSegment.from_file(wav_file)
-
-        for segment in segments:
+        active_file = self.np_array_to_audiosegment(nparr)
+        active_file.export("weboutput.mp3")
+        diarization = self.diarizationPipeline(
+            file="weboutput.mp3", max_speakers=5)
+               
+        for turn, _, speaker in diarization.itertracks(yield_label=True):
+           
+            print(f"start={turn.start:.1f}s stop={turn.end:.1f}s speaker_{speaker}")
+            turn_chunk = active_file[turn.start*1000:turn.end*1000]
             uid = uuid.uuid4()
-            self.counter += 1
-            exercpt = (int(segment.start), int(segment.end))
-            chunk_seg = active_file[segment.start*1000:segment.end*1000]
-            chunk_seg.export(f"temp/{uid}.wav",format="wav")
-            embeddings = self.embeddingInference(f"temp/{uid}.wav")
-            local_embedding[self.counter] = embeddings
-            local_transcription[self.counter] = segment.text
-            local_timestamp.append(f"{segment.start}-{segment.end}")
-            os.remove(f"temp/{uid}.wav")
-        self.superEmbeddings.update(local_embedding)
-        embedding_list = np.vstack(list(self.superEmbeddings.values()))
-        distance_matrix = cdist(embedding_list,embedding_list,metric="cosine")
-        labels = clustering.fit_predict(distance_matrix)
-        # print(labels.shape)
-        # print(len(local_timestamp))
-        for i,stamp in enumerate(local_timestamp):
-            print(f"{stamp} : Speaker {labels[i]}")
+            chunk_filename = f"temp/{uid}.wav"
+            turn_chunk.export(chunk_filename,format="wav")
+            transcriptions = self.localTranscribe(chunk_filename)
+            if transcriptions != "":
+                self.write_to_file("transcriptions.txt", f"speaker_{speaker}: {transcriptions} \n")
+                transcript_obj = {
+                    "mode": "transcript",
+                    "data": transcriptions
+                }
+                await websocket.send(json.dumps(transcript_obj))
+
+        #feed to llm
+        llm_response = tp.process()
+        if llm_response != "" and llm_response != []:
+            llm_response_string = json.dumps(llm_response)
+            llm_response_object = {
+                "mode": "llm_response", "data": llm_response_string} 
+            await websocket.send(json.dumps(llm_response_object))
+            print("============ Work Done ================")

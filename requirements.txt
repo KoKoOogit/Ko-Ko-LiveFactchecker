@@ -142,6 +142,7 @@ numpy==1.26.4
 oauthlib==3.2.2
 omegaconf==2.3.0
 onnxruntime==1.19.0
+openai==1.42.0
 openai-whisper @ git+https://github.com/openai/whisper.git@ba3f3cd54b0e5b8ce1ab3de13e32122d0d5f98ab
 opentelemetry-api==1.26.0
 opentelemetry-exporter-otlp-proto-common==1.26.0
@@ -208,6 +209,7 @@ pytz==2024.1
 PyYAML==6.0.2
 qdrant-client==1.11.0
 ratelimiter==1.2.0.post0
+redis==5.0.8
 regex==2023.12.25
 requests==2.32.3
 requests-oauthlib==2.0.0
@@ -274,6 +276,7 @@ websockets==13.0
 Werkzeug==3.0.4
 wheel==0.44.0
 whisper-live==0.0.11
+whisperx @ git+https://github.com/m-bain/whisperx.git@9e3a9e0e38fcec1304e1784381059a0e2c670be5
 wrapt==1.16.0
 wsproto==1.2.0
 yarl==1.9.4

@@ -116,3 +116,12 @@ video {
     white-space: pre-wrap;
     font-family: monospace;
 }
+
+.incorrect{
+    background-color: #f28b8b9e;
+    padding:2px;
+}
+.correct{
+    background-color: #a3ecbe9e;
+    padding:2px;
+}

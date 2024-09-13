@@ -215,7 +215,6 @@ class AudioProcessor:
                
         for turn, _, speaker in diarization.itertracks(yield_label=True):
            
-            print(f"start={turn.start:.1f}s stop={turn.end:.1f}s speaker_{speaker}")
             turn_chunk = active_file[turn.start*1000:turn.end*1000]
             uid = uuid.uuid4()
             chunk_filename = f"temp/{uid}.wav"
@@ -237,3 +236,4 @@ class AudioProcessor:
                 "mode": "llm_response", "data": llm_response_string} 
             await websocket.send(json.dumps(llm_response_object))
             print("============ Work Done ================")
+        os.remove(chunk_filename)

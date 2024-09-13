@@ -19,7 +19,7 @@
 
     <main class="container">
         <section class="video-input">
-           
+
 
             <div class="record-section">
                 <h3>Record Audio</h3>
@@ -41,23 +41,23 @@
         </section>
     </main>
 
-   <script>
+    <script>
 
-    const recordingBTN = document.getElementById("startRecording")
-    const stopRecordingBTN = document.getElementById("stopRecording")
-    const resultsElem = document.getElementById("factCheckResults")
-    const transcriptElem = document.getElementById("transcriptOutput")
-    const sessionID = this.crypto.randomUUID()
-    const sessionIDBytes = new TextEncoder().encode(sessionID)
-    const sessionIDInt16 = new Int16Array(sessionIDBytes.buffer);
-    console.log(sessionIDInt16.length)
-    let socket;
-    function jsonEscape(str) {
+        const recordingBTN = document.getElementById("startRecording")
+        const stopRecordingBTN = document.getElementById("stopRecording")
+        const resultsElem = document.getElementById("factCheckResults")
+        const transcriptElem = document.getElementById("transcriptOutput")
+        const sessionID = this.crypto.randomUUID()
+        const sessionIDBytes = new TextEncoder().encode(sessionID)
+        const sessionIDInt16 = new Int16Array(sessionIDBytes.buffer);
+        console.log(sessionIDInt16.length)
+        let socket;
+        function jsonEscape(str) {
             return str.replace(/\n/g, "\\\\n").replace(/\r/g, "\\\\r").replace(/\t/g, "\\\\t");
-    }
+        }
 
-     // JavaScript code to capture audio and send to Python server using WebSockets
-    async function startAudioStreaming() {
+        // JavaScript code to capture audio and send to Python server using WebSockets
+        async function startAudioStreaming() {
             // Check if the browser supports the required APIs
             if (!navigator.mediaDevices || !window.WebSocket) {
                 console.error("Your browser does not support necessary APIs for this demo.");
@@ -71,7 +71,7 @@
                 const source = audioContext.createMediaStreamSource(stream);
                 const processor = audioContext.createScriptProcessor(1024, 1, 1);
 
-                let speakers = prompt("Who are the speakers?")
+                let speakers = "Donald Trump, Kamla Harris, presenters"
 
                 // Create a WebSocket connection to the Python server
                 socket = new WebSocket('ws://localhost:6789');
@@ -79,10 +79,10 @@
                 socket.onopen = () => {
                     console.log("WebSocket connection established");
                     socket.send(sessionID)
-                    if (speakers != undefined || speakers != null){
+                    if (speakers != undefined || speakers != null) {
                         socket.send("speakers: " + speakers)
                     }
-                
+
                     // Process audio data and send it through WebSocket
                     processor.onaudioprocess = (event) => {
                         const audioData = event.inputBuffer.getChannelData(0);  // Get audio data from the buffer
@@ -94,8 +94,8 @@
                         }
 
                         const combinedBuffer = new Int16Array(sessionIDInt16.length + audioInt16.length);
-                        combinedBuffer.set(sessionIDBytes,0)
-                        combinedBuffer.set(audioInt16,sessionIDInt16.length)
+                        combinedBuffer.set(sessionIDBytes, 0)
+                        combinedBuffer.set(audioInt16, sessionIDInt16.length)
                         // Send the data to the WebSocket server
                         socket.send(combinedBuffer.buffer);
                     };
@@ -105,64 +105,68 @@
                     processor.connect(audioContext.destination);
                 };
 
-                
+
                 socket.onerror = (error) => {
                     console.error("WebSocket error:", error);
 
                 };
 
                 socket.onmessage = (data) => {
-                  
+
                     let parsed = JSON.parse(data.data);
-                    if (parsed.mode == "transcript"){
+                    if (parsed.mode == "transcript") {
                         transcriptElem.innerHTML += parsed.data
                     }
-                    else if (parsed.mode == "llm_response"){
-                        try{
+                    else if (parsed.mode == "llm_response") {
+                        try {
                             let llmDataObj = parsed.data
-                            let llmDataObjsParased = JSON.parse(llmDataObj)
+                            let llmDataObjsParased = JSON.parse(JSON.parse(llmDataObj))
                             console.log(llmDataObjsParased)
-                            for(let dataobj of llmDataObjsParased){
-                                if (dataobj.is_true){
-                                    resultsElem.innerHTML += 
-                                    `
-                                    <div class="correct">
-                                        ${dataobj.speaker}
-                                        </br>
-                                        ${dataobj.fact}
-                                        <br/>
-                                        ${dataobj.sources}
+                            if (llmDataObjsParased.facts) {
+                                llmDataObjsParased.facts.forEach((dataobj) => {
+                                    if (dataobj.is_true) {
+                                        resultsElem.innerHTML +=
+                                            `
+                                            <div class="correct">
+                                                <div>
+                                                    <b class="block">${dataobj.speaker || ""}</b>
+                                                    <i class="block">${dataobj.fact}</i>
+                                                    <p class="block">${dataobj.sources}</p>
+                                                </div>
+                                            </div>
+                                                </br>
+                                            `
+                                    }
+                                    if (!dataobj.is_true) {
+                                        `
+                                        <div class="incorrect">
+                                        <div>
+                                            <b class="block">${dataobj.speaker || ""}</b>
+                                            <i class="block">${dataobj.fact}</i>
+                                            <p class="block">${dataobj.sources}</p>
                                         </div>
-                                        </br>
-                                    `
-                                }
-                                if(!dataobj.is_true){
-                                    `
-                                    <div class="incorrect">
-                                        ${dataobj.speaker}
-                                        </br>
-                                        ${dataobj.fact}
-                                        <br/>
-                                        ${dataobj.sources}
                                         </div>
-                                        </br>
-                                    `
+                                        `
+                                    }
                                 }
+                                )
+
                             }
+
                         }
-                        catch (error){
+                        catch (error) {
                             console.error("Parsing Error", error)
                         }
                     }
-                    else{
+                    else {
                         console.log("Some weird data!" + data.data)
                     }
                 }
 
                 socket.onclose = () => {
                     console.log("WebSocket connection closed");
-    
-               
+
+
                 };
 
             } catch (error) {
@@ -175,12 +179,12 @@
             recordingBTN.textContent = "Recording... "
         }
 
-        stopRecordingBTN.onclick =  () => {
+        stopRecordingBTN.onclick = () => {
             socket.close()
         }
-   
-   
-   </script>
+
+
+    </script>
 </body>
 
 </html>

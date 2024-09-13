@@ -125,3 +125,6 @@ video {
     background-color: #a3ecbe9e;
     padding:2px;
 }
+.block{
+    display: block;
+}

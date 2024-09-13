@@ -164,8 +164,9 @@ class TextProcessor:
                 print(tool_call.function.arguments)
                
                 if func_name == "retrieve_answers_for_questions":
-                    response_from_func = func_to_call(questions=func_params["questions"],speaker=func_params['speaker'])
-                    total_response.append(response_from_func)
+                    if func_params.get("questions", None ) != None and func_params.get("speaker", None) != None:
+                        response_from_func = func_to_call(questions=func_params["questions"],speaker=func_params['speaker'])
+                        total_response.append(response_from_func)
                
             completion = self.openAIClient.beta.chat.completions.parse(
                 model="gpt-4o-2024-08-06",
@@ -179,7 +180,7 @@ class TextProcessor:
             output = completion.choices[0].message
 
             if output.parsed:
-                return output.model_dump_json(indent=2)
+                return output.parsed.model_dump_json(indent=2)
             elif output.refusal:
                 return "Model Called Failed"
 

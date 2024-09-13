@@ -21,23 +21,7 @@ async def receive_audio(websocket, path):
             if  isinstance(data,str):
                 if len(data) > 8 and data[:8] == "speakers":
                     tp.set_speakers(data)
-                else:
-                    filename = "temp/" + data+".wav"
-                    with wave.open(filename, 'w') as wf:
-                        # Set parameters for the wave file
-                        n_channels = 1      # Mono
-                        sampwidth = 2       # Sample width in bytes (16-bit)
-                        framerate = 44100   # Frame rate (samples per second)
-                        n_frames = 0        # Number of frames (samples)
-                        comptype = 'NONE'   # No compression
-                        compname = 'not compressed'
 
-                        # Set the parameters
-                        wf.setnchannels(n_channels)
-                        wf.setsampwidth(sampwidth)
-                        wf.setframerate(framerate)
-                        wf.setnframes(n_frames)
-                        wf.setcomptype(comptype, compname)
             elif isinstance(data,bytes):
                 session_id_length = 18
                 # Convert the received data (bytes) to numpy array
@@ -72,7 +56,7 @@ async def receive_audio(websocket, path):
 
 async def start_server():
     print("Starting server...")
-    server = await websockets.serve(receive_audio, "localhost", 6789)
+    server = await websockets.serve(receive_audio, "localhost", 6789,ping_interval=None)
     await server.wait_closed()
 
 # Run the server

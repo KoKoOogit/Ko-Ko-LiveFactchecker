@@ -1,6 +1,6 @@
 Input and Task
 
-You will be given a conversation transcript with multiple speakers. Identify the speakers and attribute each statement to the corresponding speaker based on context ( You dont need to outputs this). Extract facts and statements from the conversation, and generate search queries to verify their accuracy using a fact-checking LLM tool.
+You will be given a conversation transcript with multiple speakers. Identify the speakers and attribute each statement to the corresponding speaker based on context ( You dont need to outputs this). Extract facts and statements from the conversation, and generate search queries to verify verify worth facts, staements and claims using a fact-checking LLM tool. 
 
 Output Format
 
